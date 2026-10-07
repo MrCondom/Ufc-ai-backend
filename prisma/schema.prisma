@@ -1,0 +1,222 @@
+generator client {
+  provider = "prisma-client"
+  output   = "./generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Event {
+  id        String   @id @default(cuid())
+  name      String
+
+  startAt   DateTime
+  endAt     DateTime?
+  location  String?
+
+  // DRAFT, PUBLISHED, CANCELLED
+  publicationStatus String @default("DRAFT")
+
+  publishedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  fights  Fight[]
+  sources EventSource[]
+}
+
+model Fighter {
+  id String @id @default(cuid())
+
+  name     String @unique
+  nickname String?
+
+  wins   Int @default(0)
+  losses Int @default(0)
+  draws  Int @default(0)
+
+  koWins         Int @default(0)
+  submissionWins Int @default(0)
+  decisionWins   Int @default(0)
+
+  height       String?
+  reach        String?
+  stance       String?
+  dateOfBirth  DateTime?
+  imageUrl     String?
+
+  fightStats FightStat[]
+
+  fightsAsFighterA Fight[] @relation("FighterA")
+  fightsAsFighterB Fight[] @relation("FighterB")
+
+  influences Influence[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Fight {
+  id String @id @default(cuid())
+
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  fighterAId String
+  fighterA   Fighter @relation("FighterA", fields: [fighterAId], references: [id])
+
+  fighterBId String
+  fighterB   Fighter @relation("FighterB", fields: [fighterBId], references: [id])
+
+  // MAIN_CARD, PRELIMS, EARLY_PRELIMS
+  cardType String @default("MAIN_CARD")
+
+  // Determines order on the card.
+  // 1 = first fight, higher numbers = later fights.
+  cardOrder Int @default(1)
+
+  // UPCOMING, COMPLETED, CANCELLED
+  status String @default("UPCOMING")
+
+  winnerId String?
+  method   String?
+  round    Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stats      FightStat[]
+  influences Influence[]
+  sources    FightSource[]
+  analyses   AIAnalysis[]
+
+  @@unique([eventId, fighterAId, fighterBId])
+  @@index([eventId, cardOrder])
+}
+
+model FightStat {
+  id String @id @default(cuid())
+
+  fightId String
+  fight   Fight @relation(fields: [fightId], references: [id], onDelete: Cascade)
+
+  fighterId String
+  fighter   Fighter @relation(fields: [fighterId], references: [id], onDelete: Cascade)
+
+  significantStrikesLanded    Int @default(0)
+  significantStrikesAttempted Int @default(0)
+
+  totalStrikesLanded    Int @default(0)
+  totalStrikesAttempted Int @default(0)
+
+  takedownsLanded    Int @default(0)
+  takedownsAttempted Int @default(0)
+
+  submissionAttempts Int @default(0)
+
+  knockdowns Int @default(0)
+  reversals  Int @default(0)
+
+  controlTimeSeconds Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([fightId, fighterId])
+  @@index([fighterId])
+}
+
+model Influence {
+  id String @id @default(cuid())
+
+  fighterId String
+  fighter   Fighter @relation(fields: [fighterId], references: [id], onDelete: Cascade)
+
+  fightId String?
+  fight   Fight? @relation(fields: [fightId], references: [id], onDelete: Cascade)
+
+  type    String @default("OTHER")
+  content String
+
+  source    String?
+  sourceUrl String?
+
+  active Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FightSource {
+  id String @id @default(cuid())
+
+  fightId String
+  fight   Fight @relation(fields: [fightId], references: [id], onDelete: Cascade)
+
+  type    String
+  title   String?
+  url     String?
+  content String?
+
+  createdAt DateTime @default(now())
+
+  @@index([fightId])
+}
+
+model EventSource {
+  id String @id @default(cuid())
+
+  eventId String
+  event   Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  type    String
+  title   String?
+  url     String?
+  content String?
+
+  createdAt DateTime @default(now())
+
+  @@index([eventId])
+}
+
+model AIAnalysis {
+  id String @id @default(cuid())
+
+  fightId String
+  fight   Fight @relation(fields: [fightId], references: [id], onDelete: Cascade)
+
+  fighterAProbability Float
+  fighterBProbability Float
+
+  predictedWinnerId String?
+  predictedMethod   String?
+
+  reason String
+
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  sourceVersion String?
+
+  sources AnalysisSource[]
+
+  @@index([fightId, expiresAt])
+}
+
+model AnalysisSource {
+  id String @id @default(cuid())
+
+  analysisId String
+  analysis   AIAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  type    String
+  title   String?
+  url     String?
+  content String?
+
+  createdAt DateTime @default(now())
+
+  @@index([analysisId])
+}
