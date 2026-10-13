@@ -586,6 +586,7 @@ export type AIAnalysisCreateOrConnectWithoutFightInput = {
 
 export type AIAnalysisCreateManyFightInputEnvelope = {
   data: Prisma.AIAnalysisCreateManyFightInput | Prisma.AIAnalysisCreateManyFightInput[]
+  skipDuplicates?: boolean
 }
 
 export type AIAnalysisUpsertWithWhereUniqueWithoutFightInput = {
@@ -1525,6 +1526,7 @@ export type AIAnalysisCreateManyArgs<ExtArgs extends runtime.Types.Extensions.In
    * The data used to create many AIAnalyses.
    */
   data: Prisma.AIAnalysisCreateManyInput | Prisma.AIAnalysisCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1543,6 +1545,7 @@ export type AIAnalysisCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Exte
    * The data used to create many AIAnalyses.
    */
   data: Prisma.AIAnalysisCreateManyInput | Prisma.AIAnalysisCreateManyInput[]
+  skipDuplicates?: boolean
   /**
    * Choose, which related nodes to fetch as well
    */

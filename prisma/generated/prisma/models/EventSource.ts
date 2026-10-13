@@ -428,6 +428,7 @@ export type EventSourceCreateOrConnectWithoutEventInput = {
 
 export type EventSourceCreateManyEventInputEnvelope = {
   data: Prisma.EventSourceCreateManyEventInput | Prisma.EventSourceCreateManyEventInput[]
+  skipDuplicates?: boolean
 }
 
 export type EventSourceUpsertWithWhereUniqueWithoutEventInput = {
@@ -1229,6 +1230,7 @@ export type EventSourceCreateManyArgs<ExtArgs extends runtime.Types.Extensions.I
    * The data used to create many EventSources.
    */
   data: Prisma.EventSourceCreateManyInput | Prisma.EventSourceCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1247,6 +1249,7 @@ export type EventSourceCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Ext
    * The data used to create many EventSources.
    */
   data: Prisma.EventSourceCreateManyInput | Prisma.EventSourceCreateManyInput[]
+  skipDuplicates?: boolean
   /**
    * Choose, which related nodes to fetch as well
    */

@@ -768,6 +768,7 @@ export type FightStatCreateOrConnectWithoutFighterInput = {
 
 export type FightStatCreateManyFighterInputEnvelope = {
   data: Prisma.FightStatCreateManyFighterInput | Prisma.FightStatCreateManyFighterInput[]
+  skipDuplicates?: boolean
 }
 
 export type FightStatUpsertWithWhereUniqueWithoutFighterInput = {
@@ -848,6 +849,7 @@ export type FightStatCreateOrConnectWithoutFightInput = {
 
 export type FightStatCreateManyFightInputEnvelope = {
   data: Prisma.FightStatCreateManyFightInput | Prisma.FightStatCreateManyFightInput[]
+  skipDuplicates?: boolean
 }
 
 export type FightStatUpsertWithWhereUniqueWithoutFightInput = {
@@ -1792,6 +1794,7 @@ export type FightStatCreateManyArgs<ExtArgs extends runtime.Types.Extensions.Int
    * The data used to create many FightStats.
    */
   data: Prisma.FightStatCreateManyInput | Prisma.FightStatCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1810,6 +1813,7 @@ export type FightStatCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Exten
    * The data used to create many FightStats.
    */
   data: Prisma.FightStatCreateManyInput | Prisma.FightStatCreateManyInput[]
+  skipDuplicates?: boolean
   /**
    * Choose, which related nodes to fetch as well
    */

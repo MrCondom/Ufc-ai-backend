@@ -428,6 +428,7 @@ export type AnalysisSourceCreateOrConnectWithoutAnalysisInput = {
 
 export type AnalysisSourceCreateManyAnalysisInputEnvelope = {
   data: Prisma.AnalysisSourceCreateManyAnalysisInput | Prisma.AnalysisSourceCreateManyAnalysisInput[]
+  skipDuplicates?: boolean
 }
 
 export type AnalysisSourceUpsertWithWhereUniqueWithoutAnalysisInput = {
@@ -1229,6 +1230,7 @@ export type AnalysisSourceCreateManyArgs<ExtArgs extends runtime.Types.Extension
    * The data used to create many AnalysisSources.
    */
   data: Prisma.AnalysisSourceCreateManyInput | Prisma.AnalysisSourceCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1247,6 +1249,7 @@ export type AnalysisSourceCreateManyAndReturnArgs<ExtArgs extends runtime.Types.
    * The data used to create many AnalysisSources.
    */
   data: Prisma.AnalysisSourceCreateManyInput | Prisma.AnalysisSourceCreateManyInput[]
+  skipDuplicates?: boolean
   /**
    * Choose, which related nodes to fetch as well
    */

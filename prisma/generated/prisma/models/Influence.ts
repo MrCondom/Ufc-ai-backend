@@ -548,6 +548,7 @@ export type InfluenceCreateOrConnectWithoutFighterInput = {
 
 export type InfluenceCreateManyFighterInputEnvelope = {
   data: Prisma.InfluenceCreateManyFighterInput | Prisma.InfluenceCreateManyFighterInput[]
+  skipDuplicates?: boolean
 }
 
 export type InfluenceUpsertWithWhereUniqueWithoutFighterInput = {
@@ -613,6 +614,7 @@ export type InfluenceCreateOrConnectWithoutFightInput = {
 
 export type InfluenceCreateManyFightInputEnvelope = {
   data: Prisma.InfluenceCreateManyFightInput | Prisma.InfluenceCreateManyFightInput[]
+  skipDuplicates?: boolean
 }
 
 export type InfluenceUpsertWithWhereUniqueWithoutFightInput = {
@@ -1487,6 +1489,7 @@ export type InfluenceCreateManyArgs<ExtArgs extends runtime.Types.Extensions.Int
    * The data used to create many Influences.
    */
   data: Prisma.InfluenceCreateManyInput | Prisma.InfluenceCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1505,6 +1508,7 @@ export type InfluenceCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Exten
    * The data used to create many Influences.
    */
   data: Prisma.InfluenceCreateManyInput | Prisma.InfluenceCreateManyInput[]
+  skipDuplicates?: boolean
   /**
    * Choose, which related nodes to fetch as well
    */

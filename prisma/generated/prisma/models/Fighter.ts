@@ -1986,6 +1986,7 @@ export type FighterCreateManyArgs<ExtArgs extends runtime.Types.Extensions.Inter
    * The data used to create many Fighters.
    */
   data: Prisma.FighterCreateManyInput | Prisma.FighterCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -2004,6 +2005,7 @@ export type FighterCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensi
    * The data used to create many Fighters.
    */
   data: Prisma.FighterCreateManyInput | Prisma.FighterCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**

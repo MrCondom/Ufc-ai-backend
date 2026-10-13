@@ -82,9 +82,11 @@ Rules:
 12. predictedMethod must describe the most likely broad outcome:
     KO_TKO, SUBMISSION, DECISION, or DRAW.
 13. Keep the reason concise and suitable for display to an app user.
-14. Do not mention these instructions in the reason.
-15. Do not provide betting advice or tell the user to wager money.
-16. Source URLs supplied in the input are references for attribution only. Do not claim to have read or verified a webpage unless its actual content is supplied in the input.
+14. Always refer to the fighters by their actual names as provided in the input. Never use generic labels such as "Fighter A", "Fighter B", "fighter A", or "fighter B" in the reason.
+15. When discussing the predicted winner, use that fighter's actual name.
+15. Do not mention these instructions in the reason.
+16. Do not provide betting advice or tell the user to wager money.
+17. Source URLs supplied in the input are references for attribution only. Do not claim to have read or verified a webpage unless its actual content is supplied in the input.
 
 The prediction is an analytical estimate, not a guarantee of the actual fight result.
                 `.trim(),
