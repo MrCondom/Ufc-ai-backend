@@ -3,7 +3,134 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+
 import { PrismaService } from '../prisma/prisma.service';
+
+type FightResult = {
+  fighterAId: string;
+  fighterBId: string;
+  status: string;
+  winnerId: string | null;
+  method: string | null;
+};
+
+type RecordContribution = {
+  wins: number;
+  losses: number;
+  draws: number;
+  koWins: number;
+  submissionWins: number;
+  decisionWins: number;
+};
+
+const ZERO_CONTRIBUTION: RecordContribution = {
+  wins: 0,
+  losses: 0,
+  draws: 0,
+  koWins: 0,
+  submissionWins: 0,
+  decisionWins: 0,
+};
+
+function normalizeMethod(
+  method: string | null | undefined,
+): string {
+  if (!method) {
+    return '';
+  }
+
+  return method
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, '')
+    .replace(/-/g, '_')
+    .replace(/\//g, '_');
+}
+
+function getFightContribution(
+  fight: FightResult,
+  fighterId: string,
+): RecordContribution {
+  const contribution = { ...ZERO_CONTRIBUTION };
+
+  if (fight.status.toUpperCase() !== 'COMPLETED') {
+    return contribution;
+  }
+
+  const method = normalizeMethod(fight.method);
+
+  // A draw contributes one draw to each fighter.
+  if (method === 'DRAW' && fight.winnerId === null) {
+    contribution.draws = 1;
+    return contribution;
+  }
+
+  // A no-contest does not affect fighter records.
+  if (
+    method === 'NO_CONTEST' ||
+    method === 'NOCONTEST'
+  ) {
+    return contribution;
+  }
+
+  // A completed fight without a valid winner is not counted.
+  if (
+    !fight.winnerId ||
+    ![fight.fighterAId, fight.fighterBId].includes(
+      fight.winnerId,
+    )
+  ) {
+    return contribution;
+  }
+
+  const isWinner = fight.winnerId === fighterId;
+
+  contribution.wins = isWinner ? 1 : 0;
+  contribution.losses = isWinner ? 0 : 1;
+
+  // Method counters apply to the winner only.
+  if (isWinner) {
+    switch (method) {
+      case 'KO_TKO':
+        contribution.koWins = 1;
+        break;
+
+      case 'SUBMISSION':
+        contribution.submissionWins = 1;
+        break;
+
+      case 'DECISION':
+        contribution.decisionWins = 1;
+        break;
+    }
+  }
+
+  return contribution;
+}
+
+function difference(
+  next: RecordContribution,
+  previous: RecordContribution,
+): RecordContribution {
+  return {
+    wins: next.wins - previous.wins,
+    losses: next.losses - previous.losses,
+    draws: next.draws - previous.draws,
+    koWins: next.koWins - previous.koWins,
+    submissionWins:
+      next.submissionWins - previous.submissionWins,
+    decisionWins:
+      next.decisionWins - previous.decisionWins,
+  };
+}
+
+function hasChanges(
+  contribution: RecordContribution,
+): boolean {
+  return Object.values(contribution).some(
+    (value) => value !== 0,
+  );
+}
 
 @Injectable()
 export class FightService {
@@ -47,6 +174,8 @@ export class FightService {
       throw new NotFoundException('Fighter B not found');
     }
 
+    // Creating a fight does not update fighter records.
+    // Records change when an official result is recorded.
     return this.prisma.fight.create({
       data: {
         eventId: data.eventId,
@@ -67,12 +196,8 @@ export class FightService {
   async findAll() {
     return this.prisma.fight.findMany({
       orderBy: [
-        {
-          eventId: 'asc',
-        },
-        {
-          cardOrder: 'asc',
-        },
+        { eventId: 'asc' },
+        { cardOrder: 'asc' },
       ],
       include: {
         event: true,
@@ -179,51 +304,193 @@ export class FightService {
       cardType?: string;
       cardOrder?: number;
       status?: string;
-      winnerId?: string;
-      method?: string;
-      round?: number;
+      winnerId?: string | null;
+      method?: string | null;
+      round?: number | null;
     },
   ) {
-    const fight = await this.prisma.fight.findUnique({
-      where: { id },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      const fight = await tx.fight.findUnique({
+        where: { id },
+      });
 
-    if (!fight) {
-      throw new NotFoundException('Fight not found');
-    }
+      if (!fight) {
+        throw new NotFoundException('Fight not found');
+      }
 
-    if (
-      data.winnerId &&
-      data.winnerId !== fight.fighterAId &&
-      data.winnerId !== fight.fighterBId
-    ) {
-      throw new BadRequestException(
-        'Winner must be one of the fighters in this fight',
-      );
-    }
+      const nextWinnerId =
+        data.winnerId !== undefined
+          ? data.winnerId
+          : fight.winnerId;
 
-    return this.prisma.fight.update({
-      where: { id },
-      data,
-      include: {
-        event: true,
-        fighterA: true,
-        fighterB: true,
-      },
+      const nextMethod =
+        data.method !== undefined
+          ? data.method
+          : fight.method;
+
+      const nextStatus =
+        data.status !== undefined
+          ? data.status
+          : fight.status;
+
+      if (
+        nextWinnerId !== null &&
+        nextWinnerId !== fight.fighterAId &&
+        nextWinnerId !== fight.fighterBId
+      ) {
+        throw new BadRequestException(
+          'Winner must be one of the fighters in this fight',
+        );
+      }
+
+      const normalizedMethod = normalizeMethod(nextMethod);
+
+      if (
+        nextStatus.toUpperCase() === 'COMPLETED' &&
+        nextWinnerId === null &&
+        !['DRAW', 'NO_CONTEST', 'NOCONTEST'].includes(
+          normalizedMethod,
+        )
+      ) {
+        throw new BadRequestException(
+          'A completed fight without a winner must have a DRAW or NO_CONTEST method',
+        );
+      }
+
+      if (
+        nextStatus.toUpperCase() === 'COMPLETED' &&
+        nextWinnerId !== null &&
+        ['DRAW', 'NO_CONTEST', 'NOCONTEST'].includes(
+          normalizedMethod,
+        )
+      ) {
+        throw new BadRequestException(
+          'A draw or no-contest cannot have a winner',
+        );
+      }
+
+      const nextFight: FightResult = {
+        fighterAId: fight.fighterAId,
+        fighterBId: fight.fighterBId,
+        status: nextStatus,
+        winnerId: nextWinnerId,
+        method: nextMethod,
+      };
+
+      const previousFight: FightResult = {
+        fighterAId: fight.fighterAId,
+        fighterBId: fight.fighterBId,
+        status: fight.status,
+        winnerId: fight.winnerId,
+        method: fight.method,
+      };
+
+      // Calculate the difference between the previous and new
+      // result. Unchanged results produce zero adjustments.
+      for (const fighterId of [
+        fight.fighterAId,
+        fight.fighterBId,
+      ]) {
+        const previousContribution = getFightContribution(
+          previousFight,
+          fighterId,
+        );
+
+        const nextContribution = getFightContribution(
+          nextFight,
+          fighterId,
+        );
+
+        const adjustment = difference(
+          nextContribution,
+          previousContribution,
+        );
+
+        if (!hasChanges(adjustment)) {
+          continue;
+        }
+
+        await tx.fighter.update({
+          where: { id: fighterId },
+          data: {
+            wins: { increment: adjustment.wins },
+            losses: { increment: adjustment.losses },
+            draws: { increment: adjustment.draws },
+            koWins: { increment: adjustment.koWins },
+            submissionWins: {
+              increment: adjustment.submissionWins,
+            },
+            decisionWins: {
+              increment: adjustment.decisionWins,
+            },
+          },
+        });
+      }
+
+      return tx.fight.update({
+        where: { id },
+        data,
+        include: {
+          event: true,
+          fighterA: true,
+          fighterB: true,
+        },
+      });
     });
   }
 
   async remove(id: string) {
-    const fight = await this.prisma.fight.findUnique({
-      where: { id },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      const fight = await tx.fight.findUnique({
+        where: { id },
+      });
 
-    if (!fight) {
-      throw new NotFoundException('Fight not found');
-    }
+      if (!fight) {
+        throw new NotFoundException('Fight not found');
+      }
 
-    return this.prisma.fight.delete({
-      where: { id },
+      const previousFight: FightResult = {
+        fighterAId: fight.fighterAId,
+        fighterBId: fight.fighterBId,
+        status: fight.status,
+        winnerId: fight.winnerId,
+        method: fight.method,
+      };
+
+      // Reverse the result before deleting the fight.
+      for (const fighterId of [
+        fight.fighterAId,
+        fight.fighterBId,
+      ]) {
+        const contribution = getFightContribution(
+          previousFight,
+          fighterId,
+        );
+
+        if (!hasChanges(contribution)) {
+          continue;
+        }
+
+        await tx.fighter.update({
+          where: { id: fighterId },
+          data: {
+            wins: { increment: -contribution.wins },
+            losses: { increment: -contribution.losses },
+            draws: { increment: -contribution.draws },
+            koWins: { increment: -contribution.koWins },
+            submissionWins: {
+              increment: -contribution.submissionWins,
+            },
+            decisionWins: {
+              increment: -contribution.decisionWins,
+            },
+          },
+        });
+      }
+
+      return tx.fight.delete({
+        where: { id },
+      });
     });
   }
 }

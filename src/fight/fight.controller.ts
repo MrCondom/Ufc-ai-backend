@@ -7,11 +7,14 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
+
 import { FightService } from './fight.service';
 
 @Controller('fights')
 export class FightController {
-  constructor(private readonly fightService: FightService) {}
+  constructor(
+    private readonly fightService: FightService,
+  ) {}
 
   @Post()
   create(
@@ -53,27 +56,32 @@ export class FightController {
       cardType?: string;
       cardOrder?: number;
       status?: string;
-      winnerId?: string;
-      method?: string;
-      round?: number;
+      winnerId?: string | null;
+      method?: string | null;
+      round?: number | null;
     },
   ) {
     return this.fightService.update(id, {
       ...(body.cardType !== undefined && {
         cardType: body.cardType,
       }),
+
       ...(body.cardOrder !== undefined && {
         cardOrder: body.cardOrder,
       }),
+
       ...(body.status !== undefined && {
         status: body.status,
       }),
+
       ...(body.winnerId !== undefined && {
         winnerId: body.winnerId,
       }),
+
       ...(body.method !== undefined && {
         method: body.method,
       }),
+
       ...(body.round !== undefined && {
         round: body.round,
       }),
